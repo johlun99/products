@@ -22,4 +22,4 @@ Route::get('/test-connection', function(Request $request) {
     return $request->all();
 });
 
-Route::resource('/products', 'App\Http\Controllers\ProductController');
+Route::get('/products', 'App\Http\Controllers\ProductController@index');
