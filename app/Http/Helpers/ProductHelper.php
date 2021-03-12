@@ -14,7 +14,7 @@ class ProductHelper
      * @param int $size
      * @return array
      */
-    public function getPage(int $page = 1, int $size = 10)
+    public function getPage(int $page = 1, int $size = 10): array
     {
         $products = $this->parseProducts();
         usort($products, $this->build_sorter('name'));
@@ -31,52 +31,15 @@ class ProductHelper
      */
     private function parseProducts(): array
     {
-        $products = $this->getProducts();
-        $attributes = $this->getAttributeMeta();
+        $products = $this->getJson($this->productsUrl);
+        $attributes = $this->getJson($this->metaUrl);
         $parsed = [];
 
         foreach ($products as $product) {
-            $productAttributes = [];
-            $categories = '';
-
-            foreach ($product->attributes as $name => $val) {
-                $val = explode(',', $val);
-
-                foreach ($attributes as $attribute) {
-                    if ($attribute->code != $name)
-                        continue;
-
-                    foreach ($attribute->values as $attVal) {
-                        foreach ($val as $v) {
-                            if ($v == $attVal->code) {
-                                if ($attribute->name == 'Category') {
-                                    $categories = empty($categories)
-                                        ? $attVal->name
-                                        : "{$categories} > {$attVal->name}";
-                                } else {
-                                    $productAttributes[] = [
-                                        'name' => $attribute->name,
-                                        'value' => $attVal->name
-                                    ];
-                                }
-                            }
-                        }
-
-                    }
-
-                    break;
-                }
-            }
-
-            $productAttributes[] = [
-                'name' => 'Category',
-                'value' => $categories
-            ];
-
             $parsed[] = [
                 'id' => $product->id,
                 'name' => $product->name,
-                'attributes' => $productAttributes,
+                'attributes' => $this->parseProductAttributes($product, $attributes),
             ];
         }
 
@@ -84,21 +47,65 @@ class ProductHelper
     }
 
     /**
+     * @param object $product
+     * @param array $attributes
      * @return array
      */
-    private function getProducts(): array
+    private function parseProductAttributes(object $product, array $attributes): array
     {
-        return json_decode(file_get_contents($this->productsUrl));
+        $categories = '';
+        $productAttributes = [];
+
+        foreach ($product->attributes as $name => $val) {
+            foreach ($attributes as $attribute) {
+                if ($attribute->code != $name)
+                    continue;
+
+                foreach ($attribute->values as $attVal) {
+                    foreach (explode(',', $val) as $v) {
+                        if ($v == $attVal->code) {
+                            if ($attribute->name == 'Category') {
+                                $categories = empty($categories)
+                                    ? $attVal->name
+                                    : "{$categories} > {$attVal->name}";
+                            } else {
+                                $productAttributes[] = [
+                                    'name' => $attribute->name,
+                                    'value' => $attVal->name
+                                ];
+                            }
+                        }
+                    }
+                }
+
+                break;
+            }
+        }
+
+        $productAttributes[] = [
+            'name' => 'Category',
+            'value' => $categories
+        ];
+
+        return $productAttributes;
     }
 
     /**
+     * @param string $url
      * @return array
      */
-    private function getAttributeMeta(): array
+    private function getJson(string $url): array
     {
-        return json_decode(file_get_contents($this->metaUrl));
+        return json_decode(file_get_contents($url));
     }
 
+    /**
+     * Used for sorting a multidimensional array
+     * by a given key
+     *
+     * @param $key
+     * @return \Closure
+     */
     function build_sorter($key) {
         return function ($a, $b) use ($key) {
             return strnatcmp($a[$key], $b[$key]);
