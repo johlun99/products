@@ -18,6 +18,8 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::get('/test-connection', function() {
-    return ['msg' => 'Connection successful'];
+Route::get('/test-connection', function(Request $request) {
+    return $request->all();
 });
+
+Route::resource('/products', 'App\Http\Controllers\ProductController');
