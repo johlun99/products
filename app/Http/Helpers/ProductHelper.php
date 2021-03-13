@@ -53,7 +53,6 @@ class ProductHelper
      */
     private function parseProductAttributes(object $product, array $attributes): array
     {
-        $categories = '';
         $productAttributes = [];
 
         foreach ($product->attributes as $name => $val) {
@@ -65,9 +64,10 @@ class ProductHelper
                     foreach (explode(',', $val) as $v) {
                         if ($v == $attVal->code) {
                             if ($attribute->name == 'Category') {
-                                $categories = empty($categories)
-                                    ? $attVal->name
-                                    : "{$categories} > {$attVal->name}";
+                                $productAttributes[] = [
+                                    'name' => $attribute->name,
+                                    'value' => $this->getCategoryValue($attVal->code, $attribute->values)
+                                ];
                             } else {
                                 $productAttributes[] = [
                                     'name' => $attribute->name,
@@ -82,12 +82,24 @@ class ProductHelper
             }
         }
 
-        $productAttributes[] = [
-            'name' => 'Category',
-            'value' => $categories
-        ];
-
         return $productAttributes;
+    }
+
+    /**
+     * @param string $category
+     * @param array $categories
+     * @return string
+     */
+    private function getCategoryValue(string $category, array $categories): string
+    {
+        $codes = explode('_', substr($category, 4));
+
+        if (count($codes) == 1) {
+            return $categories[array_search("cat_{$codes[0]}", array_column($categories, 'cat'))]->name;
+        }
+
+        return $categories[array_search("cat_{$codes[0]}", array_column($categories, 'code'))]->name . ' > '
+            . $categories[array_search("cat_{$codes[0]}_{$codes[1]}", array_column($categories, 'code'))]->name;
     }
 
     /**
