@@ -62,23 +62,22 @@ class ProductHelper
 
                 foreach ($attribute->values as $attVal) {
                     foreach (explode(',', $val) as $v) {
-                        if ($v == $attVal->code) {
-                            if ($attribute->name == 'Category') {
-                                $productAttributes[] = [
-                                    'name' => $attribute->name,
-                                    'value' => $this->getCategoryValue($attVal->code, $attribute->values)
-                                ];
-                            } else {
-                                $productAttributes[] = [
-                                    'name' => $attribute->name,
-                                    'value' => $attVal->name
-                                ];
-                            }
+                        if ($v != $attVal->code)
+                            continue;
+
+                        if ($attribute->name == 'Category') {
+                            $productAttributes[] = [
+                                'name' => $attribute->name,
+                                'value' => $this->getCategoryValue($attVal->code, $attribute->values)
+                            ];
+                        } else {
+                            $productAttributes[] = [
+                                'name' => $attribute->name,
+                                'value' => $attVal->name
+                            ];
                         }
                     }
                 }
-
-                break;
             }
         }
 
